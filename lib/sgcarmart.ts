@@ -146,7 +146,10 @@ function formatCoeMMYYYY(d: Date): string {
 
 export async function scrapeSgcarmart(url: string): Promise<ScrapedCar> {
   const clean = url.trim();
-  const aidMatch = /-(\d{6,})(?:\?|$)/.exec(clean);
+  // Accept both /listing/<slug>-123456 and legacy /used_cars/info.php?ID=123456
+  const aidMatch =
+    /-(\d{6,})(?:\?|#|$)/.exec(clean) ||
+    /[?&](?:ID|id)=(\d{6,})/.exec(clean);
   if (!aidMatch) throw new Error("Could not find listing id in URL");
   const aid = aidMatch[1];
 
