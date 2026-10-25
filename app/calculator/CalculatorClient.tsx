@@ -205,69 +205,37 @@ function Num({
 
 function SgcmImport({ on }: { on: (p: Patch) => void }) {
   const [url, setUrl] = useState("");
-  const [html, setHtml] = useState("");
-  const [showHtml, setShowHtml] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "ok" | "fail">("idle");
   const [msg, setMsg] = useState("");
-
-  async function post(body: object) {
-    const res = await fetch("/api/sgcarmart/import", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    return res.json();
-  }
-
-  function applyResult(data: any) {
-    const r = data.result;
-    const patch: Patch = { vehicleId: undefined };
-    if (r.make && r.model) {
-      patch.vehicleName = [r.make, r.model, r.variant].filter(Boolean).join(" ");
-    }
-    if (r.price) patch.purchasePrice = r.price;
-    if (r.engineCc) patch.engineCc = r.engineCc;
-    if (r.fuelType) patch.fuelType = r.fuelType;
-    on(patch);
-    setState("ok");
-    setMsg(
-      `Imported${patch.vehicleName ? " " + patch.vehicleName : ""}. Review the fields below and adjust anything that didn't come through.`
-    );
-  }
+  const [detail, setDetail] = useState<any>(null);
 
   async function run() {
     if (!url) return;
     setState("loading");
     setMsg("");
+    setDetail(null);
     try {
-      const data = await post({ url });
-      if (data.ok && data.result) applyResult(data);
-      else {
+      const res = await fetch("/api/sgcarmart/import", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (data.ok && data.result) {
+        const r = data.result;
+        const patch: Patch = { vehicleId: undefined };
+        patch.vehicleName =
+          [r.make, r.model, r.variant].filter(Boolean).join(" ") || r.carModel || "SGCarMart listing";
+        if (r.price) patch.purchasePrice = r.price;
+        if (r.engineCc) patch.engineCc = r.engineCc;
+        if (r.fuelType) patch.fuelType = r.fuelType;
+        on(patch);
+        setState("ok");
+        setMsg(`Imported ${patch.vehicleName}.`);
+        setDetail(r);
+      } else {
         setState("fail");
         setMsg(data.error || "Could not import this listing.");
-        if (data.needsHtml) setShowHtml(true);
-      }
-    } catch (e: any) {
-      setState("fail");
-      setMsg(e?.message || "Network error.");
-      setShowHtml(true);
-    }
-  }
-
-  async function runHtml() {
-    if (html.length < 500) {
-      setMsg("Paste the full page source — looks too short.");
-      setState("fail");
-      return;
-    }
-    setState("loading");
-    setMsg("");
-    try {
-      const data = await post({ html, url });
-      if (data.ok && data.result) applyResult(data);
-      else {
-        setState("fail");
-        setMsg(data.error || "Couldn't read enough from the HTML. Fill in manually below.");
       }
     } catch (e: any) {
       setState("fail");
@@ -280,15 +248,15 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
       <div>
         <h2 className="text-base font-semibold">Paste a SGCarMart listing link</h2>
         <p className="mt-1 text-xs text-ink-600">
-          We'll read make, model, price, engine and fuel type from the listing. If SGCarMart blocks
-          the direct fetch, use the HTML paste option below.
+          Reads make, model, price, engine, fuel, mileage, COE and depreciation from the listing's
+          embedded data. Routes through a scraping proxy when SGCarMart's edge refuses direct fetches.
         </p>
       </div>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <input
           type="url"
           className="input flex-1"
-          placeholder="https://www.sgcarmart.com/used_cars/info.php?ID=..."
+          placeholder="https://www.sgcarmart.com/used_cars/info.php?ID=... or /listing/…"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
         />
@@ -309,44 +277,17 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
           {msg}
         </p>
       )}
-
-      <div className="mt-4 border-t border-ink-100 pt-4">
-        <button
-          type="button"
-          onClick={() => setShowHtml((v) => !v)}
-          className="text-xs font-medium text-brand-600"
-          aria-expanded={showHtml}
-        >
-          {showHtml ? "– Hide" : "+ Blocked? Paste the page HTML instead"}
-        </button>
-        {showHtml && (
-          <div className="mt-3 space-y-3">
-            <ol className="list-decimal space-y-1 pl-5 text-xs text-ink-600">
-              <li>Open the listing in your browser.</li>
-              <li>Press <kbd className="rounded bg-ink-100 px-1">Ctrl</kbd>+<kbd className="rounded bg-ink-100 px-1">U</kbd> to view source.</li>
-              <li><kbd className="rounded bg-ink-100 px-1">Ctrl</kbd>+<kbd className="rounded bg-ink-100 px-1">A</kbd> → <kbd className="rounded bg-ink-100 px-1">Ctrl</kbd>+<kbd className="rounded bg-ink-100 px-1">C</kbd>.</li>
-              <li>Paste it below and click Parse.</li>
-            </ol>
-            <textarea
-              className="input min-h-[160px] font-mono text-[11px]"
-              placeholder="<!DOCTYPE html> …"
-              value={html}
-              onChange={(e) => setHtml(e.target.value)}
-            />
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-ink-400">{html.length.toLocaleString()} chars</span>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={runHtml}
-                disabled={state === "loading" || html.length < 500}
-              >
-                {state === "loading" ? "Parsing…" : "Parse HTML"}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      {detail && (
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-ink-600 sm:grid-cols-4">
+          {detail.price ? <Mini label="Price" value={`$${detail.price.toLocaleString()}`} /> : null}
+          {detail.engineCc ? <Mini label="Engine" value={`${detail.engineCc} cc`} /> : null}
+          {detail.fuelType ? <Mini label="Fuel" value={detail.fuelType} /> : null}
+          {detail.mileage ? <Mini label="Mileage" value={detail.mileage} /> : null}
+          {detail.regDate ? <Mini label="Reg date" value={detail.regDate} /> : null}
+          {detail.coeEnd ? <Mini label="COE end" value={detail.coeEnd} /> : null}
+          {detail.depreciation ? <Mini label="Depreciation" value={detail.depreciation} /> : null}
+        </dl>
+      )}
     </section>
   );
 }
