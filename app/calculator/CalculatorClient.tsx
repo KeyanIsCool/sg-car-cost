@@ -147,7 +147,6 @@ function Num({
   value,
   onChange,
   min,
-  step,
   suffix,
   prefix,
 }: {
@@ -158,6 +157,12 @@ function Num({
   suffix?: string;
   prefix?: string;
 }) {
+  const [raw, setRaw] = useState<string>(String(value ?? 0));
+  const [focused, setFocused] = useState(false);
+  // Keep the input in sync with external state when not focused.
+  if (!focused && raw !== String(value) && Number(raw) !== value) {
+    setRaw(String(value));
+  }
   return (
     <div className="relative">
       {prefix && (
@@ -166,13 +171,28 @@ function Num({
         </span>
       )}
       <input
-        type="number"
-        className={`input tabular-nums ${prefix ? "pl-8" : ""} ${suffix ? "pr-12" : ""}`}
-        value={Number.isFinite(value) ? value : 0}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        min={min}
-        step={step ?? "any"}
+        type="text"
         inputMode="decimal"
+        className={`input tabular-nums ${prefix ? "pl-7" : ""} ${suffix ? "pr-16" : ""}`}
+        value={raw}
+        onFocus={(e) => {
+          setFocused(true);
+          e.currentTarget.select();
+        }}
+        onBlur={() => {
+          setFocused(false);
+          const n = parseFloat(raw);
+          const final = Number.isFinite(n) ? n : 0;
+          onChange(final);
+          setRaw(String(final));
+        }}
+        onChange={(e) => {
+          const next = e.target.value.replace(/[^0-9.\-]/g, "");
+          setRaw(next);
+          const n = parseFloat(next);
+          if (Number.isFinite(n)) onChange(n);
+        }}
+        min={min}
       />
       {suffix && (
         <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-ink-400">
@@ -183,10 +203,91 @@ function Num({
   );
 }
 
+function SgcmImport({ on }: { on: (p: Patch) => void }) {
+  const [url, setUrl] = useState("");
+  const [state, setState] = useState<"idle" | "loading" | "ok" | "fail">("idle");
+  const [msg, setMsg] = useState("");
+
+  async function run() {
+    if (!url) return;
+    setState("loading");
+    setMsg("");
+    try {
+      const res = await fetch("/api/sgcarmart/import", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (data.ok && data.result) {
+        const r = data.result;
+        const patch: Patch = { vehicleId: undefined };
+        if (r.make && r.model) {
+          patch.vehicleName = [r.make, r.model, r.variant].filter(Boolean).join(" ");
+        }
+        if (r.price) patch.purchasePrice = r.price;
+        if (r.engineCc) patch.engineCc = r.engineCc;
+        if (r.fuelType) patch.fuelType = r.fuelType;
+        on(patch);
+        setState("ok");
+        setMsg(`Imported ${patch.vehicleName ?? "listing"}.`);
+      } else {
+        setState("fail");
+        setMsg(data.error || "Could not import this listing.");
+      }
+    } catch (e: any) {
+      setState("fail");
+      setMsg(e?.message || "Network error.");
+    }
+  }
+
+  return (
+    <section className="card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold">Paste a SGCarMart listing link</h2>
+          <p className="mt-1 text-xs text-ink-600">
+            We'll try to read the make, model, price, engine and fuel type from the public listing.
+            If fields are missing, finish them in the form below.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <input
+          type="url"
+          className="input flex-1"
+          placeholder="https://www.sgcarmart.com/used_cars/info.php?ID=..."
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={run}
+          disabled={state === "loading" || !url}
+        >
+          {state === "loading" ? "Reading…" : "Import"}
+        </button>
+      </div>
+      {msg && (
+        <p
+          className={`mt-3 text-xs ${
+            state === "ok" ? "text-emerald-700" : "text-red-700"
+          }`}
+          role="status"
+        >
+          {msg}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
   return (
     <>
-      <Card title="What car are you considering?" hint="Pick from the seed catalogue or enter manually.">
+      <SgcmImport on={on} />
+      <Card title="Or enter car details" hint="Pre-filled from the import above, or pick from the seed catalogue.">
         <div className="sm:col-span-2">
           <Field label="Vehicle">
             <select
@@ -252,7 +353,7 @@ function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
         )}
       </Card>
       <p className="text-xs text-ink-400">
-        Pasting a SGCarMart URL is not available — SGCarMart's terms do not permit automated extraction here. Enter details manually above.
+        SGCarMart import is best-effort. If a field didn't populate, fill it in manually above.
       </p>
     </>
   );
