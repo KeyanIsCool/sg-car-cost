@@ -4,6 +4,43 @@ import { sgd } from "@/lib/format";
 import { CarArt, tintFor } from "@/components/CarArt";
 import { Reveal } from "@/components/Motion";
 
+function VehicleHero({ v }: { v: any }) {
+  const tint = tintFor(v.id);
+  return (
+    <div
+      className="relative aspect-[16/10] overflow-hidden"
+      style={{ background: `linear-gradient(135deg, ${tint}22 0%, ${tint}08 100%)` }}
+    >
+      {v.hero_image ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={v.hero_image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        </>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <CarArt tint={tint} className="h-24 w-48 transition group-hover:scale-110" />
+        </div>
+      )}
+      <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+        <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium uppercase tracking-wider text-ink-700 backdrop-blur">
+          {v.fuel_type}
+        </span>
+        {v.coe_category && (
+          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium uppercase tracking-wider text-ink-700 backdrop-blur">
+            COE {v.coe_category}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export const metadata = { title: "Cars" };
 export const revalidate = 300;
 
@@ -17,10 +54,10 @@ export default async function CarsIndex() {
   return (
     <div className="space-y-12">
       <header>
-        <span className="chip chip-accent">🚗 {vehicles.length} models · live from Neon</span>
-        <h1 className="display mt-4 text-4xl font-bold sm:text-5xl">Cars</h1>
-        <p className="mt-3 max-w-2xl text-ink-600">
-          Click any car to see its all-in monthly cost of ownership in Singapore.
+        <span className="chip chip-accent">🚗 {vehicles.length} models in Neon</span>
+        <h1 className="display mt-4 text-4xl font-bold sm:text-6xl">Cars</h1>
+        <p className="mt-3 max-w-2xl text-lg text-ink-600">
+          Click any car to see its all-in monthly cost of ownership in Singapore. Prices shown are indicative — personalise your scenario in the calculator.
         </p>
       </header>
 
@@ -46,26 +83,7 @@ export default async function CarsIndex() {
                   href={`/cars/${v.slug}`}
                   className="group block overflow-hidden rounded-3xl bg-white ring-1 ring-ink-100 transition hover:-translate-y-1 hover:shadow-xl"
                 >
-                  <div
-                    className="relative aspect-[16/10]"
-                    style={{
-                      background: `linear-gradient(135deg, ${tintFor(v.id)}22 0%, ${tintFor(v.id)}08 100%)`,
-                    }}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <CarArt tint={tintFor(v.id)} className="h-24 w-48 transition group-hover:scale-110" />
-                    </div>
-                    <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-700 backdrop-blur">
-                        {v.fuel_type}
-                      </span>
-                      {v.coe_category && (
-                        <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-700 backdrop-blur">
-                          COE {v.coe_category}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <VehicleHero v={v} />
                   <div className="p-5">
                     <div className="text-base font-semibold leading-tight">
                       {v.model}

@@ -1,6 +1,6 @@
 import { calcLoan } from "./loan";
 import { calcDepreciation, estimateResale } from "./depreciation";
-import { roadTaxICE, roadTaxEV, roadTaxHybrid } from "./roadTax";
+import { roadTaxICE, roadTaxEV, roadTaxHybrid, roadTaxBike } from "./roadTax";
 import { calcFuel, calcEV } from "./fuel";
 import { calcParking } from "./parking";
 import { estimateInsurance } from "./insurance";
@@ -76,11 +76,16 @@ export function compute(s: CalcState): ComputeResult {
     ncdPct: s.ncdPct,
     vehicleValue: s.purchasePrice,
   });
+  // Bikes get a much lower insurance base; override everything with ~0.4x of car.
+  const bikeFactor = s.kind === "bike" ? 0.4 : 1;
   const insuranceMonthly =
-    s.insuranceAnnualOverride > 0 ? s.insuranceAnnualOverride / 12 : insurance.monthlyMid;
+    s.insuranceAnnualOverride > 0
+      ? s.insuranceAnnualOverride / 12
+      : insurance.monthlyMid * bikeFactor;
 
   let roadTaxAnnual = 0;
-  if (s.fuelType === "ev") roadTaxAnnual = roadTaxEV(s.motorKw);
+  if (s.kind === "bike") roadTaxAnnual = roadTaxBike(s.engineCc);
+  else if (s.fuelType === "ev") roadTaxAnnual = roadTaxEV(s.motorKw);
   else if (s.fuelType === "hybrid") roadTaxAnnual = roadTaxHybrid(s.engineCc);
   else roadTaxAnnual = roadTaxICE(s.engineCc);
 
@@ -91,7 +96,9 @@ export function compute(s: CalcState): ComputeResult {
     setCost: s.tyreSetCost,
     intervalKm: s.tyreIntervalKm,
   });
-  const erp = calcErp({ tripsPerWeek: s.erpTripsPerWeek, avgChargePerTrip: s.erpAvgCharge });
+  const erp = s.kind === "bike"
+    ? { monthly: 0, weekly: 0, annual: 0 }
+    : calcErp({ tripsPerWeek: s.erpTripsPerWeek, avgChargePerTrip: s.erpAvgCharge });
 
   const breakdown: CostBreakdown = {
     financing: loan.monthlyInstalment,

@@ -30,7 +30,7 @@ if (!url) {
 }
 
 const dbDir = join(__dirname, "..", "db");
-const files = ["schema.sql", "seed.sql", "seed_more.sql"];
+const files = ["schema.sql", "seed.sql", "seed_more.sql", "migration_hero_image.sql"];
 
 const client = new Client(url);
 await client.connect();

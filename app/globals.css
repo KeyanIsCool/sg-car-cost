@@ -12,7 +12,8 @@
 }
 
 html, body { height: 100%; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; font-size: 17px; }
+@media (min-width: 640px) { html { font-size: 16px; } }
 body {
   background: var(--bg);
   color: var(--fg);
@@ -33,11 +34,11 @@ h1, h2, h3, .display {
 .btn-ghost { @apply bg-ink-100 text-ink-900 hover:bg-ink-200; }
 .btn-outline { @apply border border-ink-200 bg-white text-ink-900 hover:bg-ink-50; }
 .btn-accent { @apply text-white; background: linear-gradient(135deg, #ff5e3a 0%, #ff2d55 100%); }
-.input { @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ink-900 focus:ring-4 focus:ring-ink-900/5; }
-.label { @apply block text-[11px] font-semibold uppercase tracking-wider text-ink-400 mb-1.5; }
-.chip { @apply inline-flex items-center rounded-full border border-ink-200 bg-white px-3 py-1 text-xs text-ink-600; }
+.input { @apply w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-base outline-none transition focus:border-ink-900 focus:ring-4 focus:ring-ink-900/5; }
+.label { @apply block text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2; }
+.chip { @apply inline-flex items-center rounded-full border border-ink-200 bg-white px-3.5 py-1.5 text-sm text-ink-600; }
 .chip-accent { background: linear-gradient(135deg, #fff1ee 0%, #ffeae7 100%); border-color: #ffd3c7; color: #c7351b; }
-.pill { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium; }
+.pill { @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold; }
 
 .glow-orange { box-shadow: 0 10px 40px -10px rgba(255,94,58,.45); }
 .glow-blue { box-shadow: 0 10px 40px -10px rgba(43,127,255,.45); }

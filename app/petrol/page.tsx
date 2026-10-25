@@ -9,10 +9,10 @@ export default function PetrolPage() {
   return (
     <div className="space-y-10">
       <header>
-        <span className="chip chip-accent">⛽ Updated {PRICES_META.effective_date}</span>
-        <h1 className="display mt-4 text-4xl font-bold sm:text-5xl">Singapore petrol prices</h1>
-        <p className="mt-3 max-w-2xl text-ink-600">
-          Pump prices by brand and grade. Prices shown are before any card or app discounts (expect ~15–20% off at the pump with your bank promo).
+        <span className="chip chip-accent">⛽ Indicative · last reviewed {PRICES_META.effective_date}</span>
+        <h1 className="display mt-4 text-4xl font-bold sm:text-6xl">Petrol prices</h1>
+        <p className="mt-3 max-w-2xl text-lg text-ink-600">
+          Pump prices by brand and grade — <b>indicative only</b>. Live scraping of oil-company sites is scheduled daily but not yet wired to real sources. Expect ~15–20% off with major bank/app promos.
         </p>
       </header>
 

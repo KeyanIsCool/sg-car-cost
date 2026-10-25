@@ -3,10 +3,14 @@ import { MaintenanceTier } from "@/lib/calculations/maintenance";
 
 export type ParkingType = "hdb" | "condo" | "landed" | "street" | "private" | "other";
 export type ErpPreset = "none" | "occasional" | "cbd" | "heavy" | "custom";
+export type VehicleKind = "car" | "bike";
+export type MileageUnit = "yr" | "mo";
 
 export interface CalcState {
+  kind: VehicleKind;
   vehicleId?: string;
   vehicleName: string;
+  vehicleImage?: string;
   purchasePrice: number;
   fuelType: FuelType;
   engineCc: number;
@@ -21,6 +25,10 @@ export interface CalcState {
 
   // Usage
   annualKm: number;
+  mileageUnit: MileageUnit;
+
+  // Home carpark lookup (HDB)
+  postalCode: string;
 
   // Energy
   petrolGrade: PetrolGrade;
@@ -70,6 +78,7 @@ export interface CalcState {
 }
 
 export const DEFAULT_STATE: CalcState = {
+  kind: "car",
   vehicleId: "bmw-320i-m-sport",
   vehicleName: "BMW 320i M Sport (demo)",
   purchasePrice: 310000,
@@ -82,6 +91,8 @@ export const DEFAULT_STATE: CalcState = {
   yearsLicensed: 10,
   ncdPct: 0.5,
   annualKm: 18000,
+  mileageUnit: "yr",
+  postalCode: "",
   petrolGrade: "95",
   pricePerLitre: 2.8,
   homeKwhRate: 0.3,

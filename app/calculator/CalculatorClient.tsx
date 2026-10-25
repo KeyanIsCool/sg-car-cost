@@ -20,7 +20,7 @@ function reducer(state: CalcState, patch: Patch): CalcState {
   return { ...state, ...patch };
 }
 
-const STEPS = ["Car", "Driving", "Parking", "Financing", "Running costs", "Results"] as const;
+const STEPS = ["Vehicle", "Driving", "Parking", "Financing", "Running costs", "Results"] as const;
 
 export function CalculatorClient() {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
@@ -229,6 +229,7 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
         if (r.price) patch.purchasePrice = r.price;
         if (r.engineCc) patch.engineCc = r.engineCc;
         if (r.fuelType) patch.fuelType = r.fuelType;
+        if (r.images?.[0]) patch.vehicleImage = r.images[0];
         on(patch);
         setState("ok");
         setMsg(`Imported ${patch.vehicleName}.`);
@@ -244,19 +245,23 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
   }
 
   return (
-    <section className="card p-5 sm:p-6">
-      <div>
-        <h2 className="text-base font-semibold">Paste a SGCarMart listing link</h2>
-        <p className="mt-1 text-xs text-ink-600">
-          Reads make, model, price, engine, fuel, mileage, COE and depreciation from the listing's
-          embedded data. Routes through a scraping proxy when SGCarMart's edge refuses direct fetches.
-        </p>
+    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pop-sky/40 via-white to-pop-mint/30 p-5 ring-1 ring-ink-100 sm:p-7">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-xl text-white">
+          🚗
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold sm:text-xl">Import from SGCarMart</h2>
+          <p className="mt-1 text-sm text-ink-600">
+            Paste a listing URL — we read make, model, price, engine, fuel, mileage, COE and more.
+          </p>
+        </div>
       </div>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
         <input
           type="url"
-          className="input flex-1"
-          placeholder="https://www.sgcarmart.com/used_cars/info.php?ID=... or /listing/…"
+          className="input flex-1 bg-white"
+          placeholder="https://www.sgcarmart.com/listing/…"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
         />
@@ -266,54 +271,145 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
           onClick={run}
           disabled={state === "loading" || !url}
         >
-          {state === "loading" ? "Reading…" : "Import"}
+          {state === "loading" ? "Reading…" : "Import listing"}
         </button>
       </div>
       {msg && (
         <p
-          className={`mt-3 text-xs ${state === "ok" ? "text-emerald-700" : "text-red-700"}`}
+          className={`mt-3 text-sm ${state === "ok" ? "text-emerald-700" : "text-red-700"}`}
           role="status"
         >
+          {state === "ok" ? "✓ " : "⚠ "}
           {msg}
         </p>
       )}
       {detail && (
-        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-ink-600 sm:grid-cols-4">
+        <dl className="mt-4 grid grid-cols-2 gap-2 text-xs text-ink-600 sm:grid-cols-4">
           {detail.price ? <Mini label="Price" value={`$${detail.price.toLocaleString()}`} /> : null}
           {detail.engineCc ? <Mini label="Engine" value={`${detail.engineCc} cc`} /> : null}
           {detail.fuelType ? <Mini label="Fuel" value={detail.fuelType} /> : null}
-          {detail.mileage ? <Mini label="Mileage" value={detail.mileage} /> : null}
+          {detail.mileage && detail.mileage !== "N.A." ? <Mini label="Mileage" value={detail.mileage} /> : null}
           {detail.regDate ? <Mini label="Reg date" value={detail.regDate} /> : null}
           {detail.coeEnd ? <Mini label="COE end" value={detail.coeEnd} /> : null}
-          {detail.depreciation ? <Mini label="Depreciation" value={detail.depreciation} /> : null}
+          {detail.depreciation && detail.depreciation !== "N.A." ? <Mini label="Depreciation" value={detail.depreciation} /> : null}
         </dl>
       )}
     </section>
   );
 }
 
+function HdbLookup({
+  postal,
+  onPostal,
+  onRate,
+}: {
+  postal: string;
+  onPostal: (p: string) => void;
+  onRate: (rate: number, label: string) => void;
+}) {
+  const [state, setState] = useState<"idle" | "loading" | "ok" | "fail">("idle");
+  const [msg, setMsg] = useState("");
+
+  async function run() {
+    const p = postal.replace(/\D/g, "");
+    if (p.length !== 6) {
+      setState("fail");
+      setMsg("Enter a 6-digit postal code.");
+      return;
+    }
+    setState("loading");
+    setMsg("");
+    try {
+      const r = await fetch(`/api/parking?postal=${p}`);
+      const data = await r.json();
+      if (data.ok && data.rate) {
+        onRate(data.rate, data.carpark?.carpark_no ?? "HDB");
+        setState("ok");
+        setMsg(`${data.carpark?.carpark_no ?? "Carpark"} · ${data.note} · $${data.rate}/mo`);
+      } else {
+        setState("fail");
+        setMsg(data.error || data.note || "Not found");
+      }
+    } catch (e: any) {
+      setState("fail");
+      setMsg(e?.message || "Network error");
+    }
+  }
+
+  return (
+    <div className="rounded-xl bg-ink-50 p-4">
+      <div className="text-sm font-medium">Live HDB season parking lookup</div>
+      <p className="mt-1 text-xs text-ink-600">
+        Nearest HDB carpark via data.gov.sg + OneMap. Enter home postal code.
+      </p>
+      <div className="mt-3 flex gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          className="input flex-1"
+          placeholder="e.g. 310120"
+          value={postal}
+          onChange={(e) => onPostal(e.target.value.replace(/\D/g, "").slice(0, 6))}
+        />
+        <button type="button" className="btn btn-outline" onClick={run} disabled={state === "loading"}>
+          {state === "loading" ? "…" : "Look up"}
+        </button>
+      </div>
+      {msg && (
+        <p className={`mt-2 text-xs ${state === "ok" ? "text-emerald-700" : "text-red-700"}`}>{msg}</p>
+      )}
+    </div>
+  );
+}
+
 function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
   return (
     <>
-      <SgcmImport on={on} />
-      <Card title="Or enter car details" hint="Pre-filled from the import above, or pick from the seed catalogue.">
+      <Card title="Car or motorcycle?" hint="Switch to motorcycle for bike-specific road tax, insurance and no ERP.">
+        <div className="sm:col-span-2">
+          <RadioGroup
+            name="Vehicle kind"
+            value={s.kind}
+            onChange={(v) => on({ kind: v, fuelType: v === "bike" ? "petrol" : s.fuelType })}
+            options={[
+              { value: "car", label: "🚗 Car" },
+              { value: "bike", label: "🏍 Motorcycle" },
+            ]}
+          />
+        </div>
+      </Card>
+      {s.kind === "car" && <SgcmImport on={on} />}
+      <Card title="Vehicle details" hint="Pre-filled from import or catalogue.">
+        {s.vehicleImage && (
+          <div className="sm:col-span-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={s.vehicleImage}
+              alt=""
+              className="h-40 w-full rounded-xl object-cover"
+              onError={(e) => ((e.currentTarget.style.display = "none"))}
+            />
+          </div>
+        )}
         <div className="sm:col-span-2">
           <Field label="Vehicle">
             <select
               className="input"
               value={s.vehicleId ?? ""}
               onChange={(e) => {
-                const v = VEHICLES.find((x) => x.id === e.target.value);
+                const v = VEHICLES.find((x) => x.id === e.target.value) as any;
                 if (!v) return;
                 on({
                   vehicleId: v.id,
                   vehicleName: `${v.make} ${v.model} ${v.variant}`,
-                  purchasePrice: v.purchase_price,
+                  vehicleImage: v.hero_image || undefined,
+                  purchasePrice: Number(v.purchase_price),
                   fuelType: v.fuel_type,
-                  engineCc: v.engine_cc ?? 0,
-                  motorKw: v.motor_power_kw ?? 0,
-                  litresPer100km: v.fuel_efficiency_l_100km ?? s.litresPer100km,
-                  kwhPer100km: v.energy_kwh_100km ?? s.kwhPer100km,
+                  engineCc: Number(v.engine_cc ?? 0),
+                  motorKw: Number(v.motor_power_kw ?? 0),
+                  litresPer100km: Number(v.fuel_efficiency_l_100km ?? s.litresPer100km),
+                  kwhPer100km: Number(v.energy_kwh_100km ?? s.kwhPer100km),
                 });
               }}
             >
@@ -333,12 +429,19 @@ function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
             name="Fuel type"
             value={s.fuelType}
             onChange={(v) => on({ fuelType: v })}
-            options={[
-              { value: "petrol", label: "Petrol" },
-              { value: "diesel", label: "Diesel" },
-              { value: "hybrid", label: "Hybrid" },
-              { value: "ev", label: "EV" },
-            ]}
+            options={
+              s.kind === "bike"
+                ? [
+                    { value: "petrol", label: "Petrol" },
+                    { value: "ev", label: "Electric" },
+                  ]
+                : [
+                    { value: "petrol", label: "Petrol" },
+                    { value: "diesel", label: "Diesel" },
+                    { value: "hybrid", label: "Hybrid" },
+                    { value: "ev", label: "EV" },
+                  ]
+            }
           />
         </Field>
         {s.fuelType !== "ev" ? (
@@ -368,17 +471,39 @@ function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
   );
 }
 
+
 function StepDriving({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
+  const monthlyKm = Math.round(s.annualKm / 12);
   return (
     <Card title="Tell us about your driving">
       <Field label="Your age">
         <Num value={s.age} onChange={(n) => on({ age: n })} />
       </Field>
-      <Field label="Years holding driving licence">
+      <Field label="Years holding licence">
         <Num value={s.yearsLicensed} onChange={(n) => on({ yearsLicensed: n })} />
       </Field>
-      <Field label="Annual mileage">
-        <Num suffix="km/yr" value={s.annualKm} onChange={(n) => on({ annualKm: n })} />
+      <Field label={`Mileage (${s.mileageUnit === "mo" ? "per month" : "per year"})`}>
+        <div className="space-y-2">
+          <Num
+            suffix={s.mileageUnit === "mo" ? "km/mo" : "km/yr"}
+            value={s.mileageUnit === "mo" ? monthlyKm : s.annualKm}
+            onChange={(n) => on({ annualKm: s.mileageUnit === "mo" ? Math.round(n * 12) : n })}
+          />
+          <div className="flex items-center justify-between text-xs">
+            <RadioGroup
+              name="Mileage unit"
+              value={s.mileageUnit}
+              onChange={(v) => on({ mileageUnit: v })}
+              options={[
+                { value: "yr", label: "/ year" },
+                { value: "mo", label: "/ month" },
+              ]}
+            />
+            <span className="text-ink-400">
+              = {s.mileageUnit === "mo" ? `${s.annualKm.toLocaleString()} km/yr` : `${monthlyKm.toLocaleString()} km/mo`}
+            </span>
+          </div>
+        </div>
       </Field>
       <Field label="NCD">
         <select
@@ -452,6 +577,15 @@ function StepParking({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
           ]}
         />
       </Field>
+      {s.parkingType === "hdb" && (
+        <div className="sm:col-span-2">
+          <HdbLookup
+            postal={s.postalCode}
+            onPostal={(p) => on({ postalCode: p })}
+            onRate={(rate) => on({ homeParking: rate })}
+          />
+        </div>
+      )}
       <Field label="Home parking">
         <Num prefix="$" suffix="/mo" value={s.homeParking} onChange={(n) => on({ homeParking: n })} />
       </Field>
@@ -502,8 +636,30 @@ function StepParking({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
 }
 
 function StepFinancing({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
+  const quickButtons = [
+    { label: "Full cash", pct: 1, tenure: 0 },
+    { label: "Full loan", pct: 0.3, tenure: 7 },
+    { label: "70% loan 7y", pct: 0.3, tenure: 7 },
+    { label: "60% loan 5y", pct: 0.4, tenure: 5 },
+  ];
   return (
-    <Card title="Financing" hint="Singapore car loans use a flat interest rate. Effective rate is roughly ~1.8× flat.">
+    <Card title="Financing" hint="Singapore car loans use a flat interest rate. Effective rate ≈ 1.8× flat.">
+      <div className="sm:col-span-2">
+        <Field label="Quick scenarios">
+          <div className="flex flex-wrap gap-2">
+            {quickButtons.map((q) => (
+              <button
+                key={q.label}
+                type="button"
+                className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+                onClick={() => on({ downpaymentPct: q.pct, tenureYears: q.tenure || s.tenureYears })}
+              >
+                {q.label}
+              </button>
+            ))}
+          </div>
+        </Field>
+      </div>
       <Field label="Downpayment">
         <RadioGroup
           name="Downpayment"
@@ -514,6 +670,7 @@ function StepFinancing({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
             { value: "0.3", label: "30%" },
             { value: "0.4", label: "40%" },
             { value: "0.5", label: "50%" },
+            { value: "1", label: "Cash" },
           ]}
         />
       </Field>

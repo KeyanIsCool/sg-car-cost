@@ -29,20 +29,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
               <span className="text-[15px] font-semibold tracking-tight">Car Cost</span>
             </Link>
-            <nav aria-label="Primary" className="hidden gap-6 text-sm text-ink-600 sm:flex">
+            <nav aria-label="Primary" className="hidden gap-6 text-sm font-medium text-ink-600 md:flex">
               <Link href="/calculator" className="hover:text-ink-900">Calculator</Link>
               <Link href="/cars" className="hover:text-ink-900">Cars</Link>
               <Link href="/car-loan-calculator" className="hover:text-ink-900">Loans</Link>
               <Link href="/petrol" className="hover:text-ink-900">Petrol</Link>
               <Link href="/ev-charging" className="hover:text-ink-900">EV</Link>
-              <Link href="/road-tax-calculator" className="hover:text-ink-900">Road tax</Link>
             </nav>
             <Link href="/calculator" className="btn btn-primary">
               Calculate →
             </Link>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-5 py-8 sm:py-12">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-12">{children}</main>
         <footer className="mt-24 border-t border-ink-100 bg-white">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-10 text-sm text-ink-600 sm:flex-row sm:items-start sm:justify-between">
             <div>

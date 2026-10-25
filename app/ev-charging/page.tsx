@@ -10,10 +10,10 @@ export default function EvPage() {
   return (
     <div className="space-y-10">
       <header>
-        <span className="chip chip-accent">⚡ Updated {PRICES_META.effective_date}</span>
-        <h1 className="display mt-4 text-4xl font-bold sm:text-5xl">EV charging rates</h1>
-        <p className="mt-3 max-w-2xl text-ink-600">
-          Per-kWh rates across the main Singapore charging networks. Home charging on your SP tariff is usually the cheapest; DC rapid at highway or mall sites is the most expensive.
+        <span className="chip chip-accent">⚡ Indicative · last reviewed {PRICES_META.effective_date}</span>
+        <h1 className="display mt-4 text-4xl font-bold sm:text-6xl">EV charging rates</h1>
+        <p className="mt-3 max-w-2xl text-lg text-ink-600">
+          Per-kWh rates across SG charging networks — <b>indicative only</b>. Home charging on your SP tariff is cheapest; DC rapid at highway/mall sites is most expensive.
         </p>
       </header>
 

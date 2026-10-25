@@ -47,7 +47,15 @@ export function roadTaxEV(kw: number): number {
 }
 
 export function roadTaxHybrid(cc: number): number {
-  // Treat as ICE based on engine cc for simplicity; LTA uses the higher of
-  // engine cc and motor power basis for petrol-electric hybrids.
   return roadTaxICE(cc);
+}
+
+/** Motorcycle annual road tax from engine capacity (cc). */
+export function roadTaxBike(cc: number): number {
+  if (cc <= 0) return 0;
+  // LTA motorcycle road tax (annualised from 6-monthly), indicative.
+  if (cc <= 200) return 40;
+  if (cc <= 400) return 70 + 0.4 * (cc - 200);
+  if (cc <= 1000) return 150 + 0.6 * (cc - 400);
+  return 510 + 1 * (cc - 1000);
 }

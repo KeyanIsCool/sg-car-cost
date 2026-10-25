@@ -20,7 +20,7 @@ export async function listVehicles() {
     select id, make, model, variant, slug, fuel_type, engine_cc,
            motor_power_kw, fuel_efficiency as fuel_efficiency_l_100km,
            energy_kwh_100km, omv, arf, coe_category, purchase_price,
-           source, effective_from
+           hero_image, source, effective_from
     from vehicles order by make, model
   `) as any[];
   return rows;
