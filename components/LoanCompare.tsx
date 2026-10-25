@@ -1,7 +1,6 @@
 "use client";
-import { LOAN_RATES as FALLBACK } from "@/lib/data/loans";
+import { LOAN_RATES } from "@/lib/data/loans";
 import { calcLoan } from "@/lib/calculations/loan";
-const LOAN_RATES = FALLBACK;
 import { sgd } from "@/lib/format";
 
 export function LoanCompare({
@@ -16,33 +15,55 @@ export function LoanCompare({
   const rows = LOAN_RATES.map((r) => {
     const c = calcLoan({ purchasePrice, downpaymentPct, flatRate: r.flat_rate, tenureYears });
     return { ...r, ...c };
-  });
+  }).sort((a, b) => a.flat_rate - b.flat_rate);
+  const banks = rows.filter((r) => r.type === "bank");
+  const inhouse = rows.filter((r) => r.type === "inhouse");
+
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between p-5">
         <div>
-          <div className="text-sm font-medium text-ink-900">Compare car loans</div>
+          <div className="text-sm font-semibold text-ink-900">Compare car loans</div>
           <div className="text-xs text-ink-400">
-            Indicative rates for illustration. Last updated {LOAN_RATES[0].effective_date}.
+            Indicative flat rates — Last updated {LOAN_RATES[0].effective_date}.
           </div>
         </div>
+        <span className="pill bg-pop-mint text-emerald-800">Live sin1</span>
+      </div>
+      <Table title="Banks" rows={banks} />
+      <div className="border-t border-ink-100" />
+      <Table title="Finance houses / in-house" rows={inhouse} />
+    </div>
+  );
+}
+
+function Table({ title, rows }: { title: string; rows: any[] }) {
+  return (
+    <div>
+      <div className="bg-ink-50/50 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-ink-500">
+        {title}
       </div>
       <table className="w-full text-sm">
-        <thead className="bg-ink-50 text-xs uppercase tracking-wide text-ink-400">
+        <thead className="text-xs uppercase tracking-wider text-ink-400">
           <tr>
             <th className="px-5 py-2 text-left">Lender</th>
-            <th className="px-5 py-2 text-right">Flat rate</th>
+            <th className="px-5 py-2 text-right">Flat</th>
             <th className="px-5 py-2 text-right">Monthly</th>
             <th className="px-5 py-2 text-right">Total interest</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-ink-100">
-          {rows.map((r) => (
-            <tr key={r.lender}>
-              <td className="px-5 py-3">{r.lender}</td>
-              <td className="px-5 py-3 text-right tabular-nums">{(r.flat_rate * 100).toFixed(2)}%</td>
-              <td className="px-5 py-3 text-right tabular-nums font-medium">{sgd(r.monthlyInstalment)}</td>
-              <td className="px-5 py-3 text-right tabular-nums text-ink-600">{sgd(r.totalInterest)}</td>
+          {rows.map((r, i) => (
+            <tr key={r.lender} className="hover:bg-ink-50/40">
+              <td className="px-5 py-3">
+                <div className="flex items-center gap-2">
+                  <span>{r.lender}</span>
+                  {i === 0 && <span className="pill bg-pop-yellow/40 text-amber-800">Best</span>}
+                </div>
+              </td>
+              <td className="px-5 py-3 text-right num-xl font-medium">{(r.flat_rate * 100).toFixed(2)}%</td>
+              <td className="px-5 py-3 text-right num-xl font-semibold">{sgd(r.monthlyInstalment)}</td>
+              <td className="px-5 py-3 text-right num-xl text-ink-600">{sgd(r.totalInterest)}</td>
             </tr>
           ))}
         </tbody>

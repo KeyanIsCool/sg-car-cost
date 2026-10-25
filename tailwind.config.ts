@@ -6,12 +6,12 @@ export default {
     extend: {
       colors: {
         ink: {
-          50: "#f7f7f8",
-          100: "#eceef1",
-          200: "#d5d9e0",
-          400: "#8a93a3",
-          600: "#4a5162",
-          900: "#0e1116",
+          50: "#fafaf9",
+          100: "#f1f0ed",
+          200: "#e2e0dc",
+          400: "#8a847b",
+          600: "#4a443d",
+          900: "#0a0a0b",
         },
         brand: {
           50: "#eef7ff",
@@ -19,10 +19,18 @@ export default {
           600: "#1e68e0",
           700: "#1452b8",
         },
-        accent: { 500: "#10b981" },
+        pop: {
+          orange: "#ff5e3a",
+          pink: "#ff2d55",
+          yellow: "#ffd12c",
+          mint: "#a9f0d1",
+          sky: "#cfe8ff",
+          plum: "#8b5cf6",
+        },
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Inter", "sans-serif"],
+        sans: ["ui-sans-serif", "-apple-system", "BlinkMacSystemFont", "SF Pro Display", "SF Pro Text", "Segoe UI", "system-ui", "sans-serif"],
+        display: ["-apple-system", "BlinkMacSystemFont", "SF Pro Display", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       boxShadow: {
         card: "0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06)",

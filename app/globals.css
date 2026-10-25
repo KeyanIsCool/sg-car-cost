@@ -3,25 +3,95 @@
 @tailwind utilities;
 
 :root {
-  --bg: #ffffff;
-  --fg: #0e1116;
+  --bg: #fafaf9;
+  --fg: #0a0a0b;
+  --accent: #ff5e3a;
+  --accent-2: #ffd12c;
+  --mint: #a9f0d1;
+  --sky: #cfe8ff;
 }
 
 html, body { height: 100%; }
+html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
   color: var(--fg);
-  font-feature-settings: "ss01", "cv11";
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11", "cv02";
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, .display {
+  letter-spacing: -0.035em;
 }
 
 .card { @apply bg-white border border-ink-100 rounded-2xl shadow-card; }
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition; }
-.btn-primary { @apply bg-ink-900 text-white hover:bg-ink-600; }
-.btn-ghost { @apply bg-ink-50 text-ink-900 hover:bg-ink-100; }
-.btn-outline { @apply border border-ink-200 text-ink-900 hover:bg-ink-50; }
-.input { @apply w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-ink-900 focus:ring-2 focus:ring-ink-900/10; }
-.label { @apply block text-xs font-medium text-ink-600 mb-1.5; }
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition will-change-transform; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { @apply bg-ink-900 text-white hover:bg-ink-600 shadow-sm; }
+.btn-ghost { @apply bg-ink-100 text-ink-900 hover:bg-ink-200; }
+.btn-outline { @apply border border-ink-200 bg-white text-ink-900 hover:bg-ink-50; }
+.btn-accent { @apply text-white; background: linear-gradient(135deg, #ff5e3a 0%, #ff2d55 100%); }
+.input { @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-ink-900 focus:ring-4 focus:ring-ink-900/5; }
+.label { @apply block text-[11px] font-semibold uppercase tracking-wider text-ink-400 mb-1.5; }
 .chip { @apply inline-flex items-center rounded-full border border-ink-200 bg-white px-3 py-1 text-xs text-ink-600; }
+.chip-accent { background: linear-gradient(135deg, #fff1ee 0%, #ffeae7 100%); border-color: #ffd3c7; color: #c7351b; }
 .pill { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium; }
+
+.glow-orange { box-shadow: 0 10px 40px -10px rgba(255,94,58,.45); }
+.glow-blue { box-shadow: 0 10px 40px -10px rgba(43,127,255,.45); }
+
+.hero-grid {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255,94,58,.08), transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(43,127,255,.08), transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(169,240,209,.14), transparent 50%);
+}
+
+.grain::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+.num-xl {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss02", "cv11", "tnum";
+  letter-spacing: -0.045em;
+}
+
+/* Marquee for the "trusted / live data" row */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+  will-change: transform;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.float { animation: float 4s ease-in-out infinite; }
+
 *:focus-visible { outline: 2px solid #0e1116; outline-offset: 2px; border-radius: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track, .shimmer, .float { animation: none !important; }
+}

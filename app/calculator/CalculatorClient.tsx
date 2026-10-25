@@ -166,14 +166,14 @@ function Num({
   return (
     <div className="relative">
       {prefix && (
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-ink-400">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-ink-400 select-none">
           {prefix}
         </span>
       )}
       <input
         type="text"
         inputMode="decimal"
-        className={`input tabular-nums ${prefix ? "pl-7" : ""} ${suffix ? "pr-16" : ""}`}
+        className={`input tabular-nums text-left ${prefix ? "pl-8" : ""} ${suffix ? "pr-16" : ""}`}
         value={raw}
         onFocus={(e) => {
           setFocused(true);

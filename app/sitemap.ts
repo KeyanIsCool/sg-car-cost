@@ -10,6 +10,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/cars",
     "/car-loan-calculator",
     "/road-tax-calculator",
+    "/petrol",
+    "/ev-charging",
     "/methodology",
     "/data-sources",
     "/privacy",
