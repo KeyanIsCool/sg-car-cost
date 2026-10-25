@@ -164,16 +164,16 @@ function Num({
     setRaw(String(value));
   }
   return (
-    <div className="relative">
+    <div className="flex items-stretch overflow-hidden rounded-xl border border-ink-200 bg-white transition focus-within:border-ink-900 focus-within:ring-4 focus-within:ring-ink-900/5">
       {prefix && (
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-ink-400 select-none">
+        <span className="flex items-center bg-ink-50 px-3 text-sm font-medium text-ink-500 select-none">
           {prefix}
         </span>
       )}
       <input
         type="text"
         inputMode="decimal"
-        className={`input tabular-nums text-left ${prefix ? "pl-8" : ""} ${suffix ? "pr-16" : ""}`}
+        className="w-full border-0 bg-transparent px-3.5 py-2.5 text-sm tabular-nums text-left outline-none focus:ring-0"
         value={raw}
         onFocus={(e) => {
           setFocused(true);
@@ -195,7 +195,7 @@ function Num({
         min={min}
       />
       {suffix && (
-        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-ink-400">
+        <span className="flex items-center bg-ink-50 px-3 text-xs font-medium text-ink-500 select-none">
           {suffix}
         </span>
       )}
