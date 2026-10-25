@@ -50,50 +50,67 @@ function parseFuel(s: string | undefined): Extracted["fuelType"] {
 }
 
 export async function POST(req: NextRequest) {
-  const { url } = (await req.json().catch(() => ({}))) as { url?: string };
-  if (!url || typeof url !== "string") {
-    return NextResponse.json({ ok: false, error: "URL required" }, { status: 400 });
-  }
+  const body = (await req.json().catch(() => ({}))) as {
+    url?: string;
+    html?: string;
+  };
 
-  let u: URL;
-  try {
-    u = new URL(url);
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid URL" }, { status: 400 });
-  }
-  if (!/sgcarmart\.com$/i.test(u.hostname) && !/\.sgcarmart\.com$/i.test(u.hostname)) {
-    return NextResponse.json(
-      { ok: false, error: "Only sgcarmart.com URLs are supported" },
-      { status: 400 }
-    );
-  }
+  let html = "";
+  let listingUrl = "";
 
-  let html: string;
-  try {
-    const res = await fetch(u.toString(), {
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-        accept: "text/html,application/xhtml+xml",
-        "accept-language": "en-SG,en;q=0.9",
-      },
-      cache: "no-store",
-    });
-    if (!res.ok) {
+  if (body.html && body.html.length > 500) {
+    // Browser-side path: user pasted the HTML of a page they are viewing.
+    html = body.html;
+    const urlMatch = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i);
+    listingUrl = urlMatch?.[1] || body.url || "";
+  } else {
+    const { url } = body;
+    if (!url || typeof url !== "string") {
+      return NextResponse.json({ ok: false, error: "URL or HTML required" }, { status: 400 });
+    }
+    let u: URL;
+    try {
+      u = new URL(url);
+    } catch {
+      return NextResponse.json({ ok: false, error: "Invalid URL" }, { status: 400 });
+    }
+    if (!/(^|\.)sgcarmart\.com$/i.test(u.hostname)) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: `Listing returned HTTP ${res.status}. Enter details manually.`,
+        { ok: false, error: "Only sgcarmart.com URLs are supported" },
+        { status: 400 }
+      );
+    }
+    listingUrl = u.toString();
+
+    // Standard HTTP request. No bot-protection bypass — if the server
+    // refuses, we tell the user to paste the page HTML from their browser.
+    try {
+      const res = await fetch(listingUrl, {
+        headers: {
+          "user-agent": "sg-car-cost/0.1 (+https://sg-car-cost.vercel.app)",
+          accept: "text/html,application/xhtml+xml",
+          "accept-language": "en-SG,en;q=0.9",
         },
+        redirect: "follow",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            needsHtml: true,
+            error: `Listing returned HTTP ${res.status}. Paste the page HTML instead (Ctrl+U → Ctrl+A → Ctrl+C on the listing).`,
+          },
+          { status: 200 }
+        );
+      }
+      html = await res.text();
+    } catch (e: any) {
+      return NextResponse.json(
+        { ok: false, needsHtml: true, error: `Fetch failed: ${e?.message ?? "unknown"}` },
         { status: 200 }
       );
     }
-    html = await res.text();
-  } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, error: `Fetch failed: ${e?.message ?? "unknown"}` },
-      { status: 200 }
-    );
   }
 
   // Strip tags and collapse whitespace into a searchable blob.
@@ -145,7 +162,7 @@ export async function POST(req: NextRequest) {
   }
 
   const result: Extracted = {
-    listingUrl: u.toString(),
+    listingUrl,
     make,
     model,
     variant,

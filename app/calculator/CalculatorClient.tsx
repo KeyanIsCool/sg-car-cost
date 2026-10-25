@@ -205,35 +205,69 @@ function Num({
 
 function SgcmImport({ on }: { on: (p: Patch) => void }) {
   const [url, setUrl] = useState("");
+  const [html, setHtml] = useState("");
+  const [showHtml, setShowHtml] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "ok" | "fail">("idle");
   const [msg, setMsg] = useState("");
+
+  async function post(body: object) {
+    const res = await fetch("/api/sgcarmart/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return res.json();
+  }
+
+  function applyResult(data: any) {
+    const r = data.result;
+    const patch: Patch = { vehicleId: undefined };
+    if (r.make && r.model) {
+      patch.vehicleName = [r.make, r.model, r.variant].filter(Boolean).join(" ");
+    }
+    if (r.price) patch.purchasePrice = r.price;
+    if (r.engineCc) patch.engineCc = r.engineCc;
+    if (r.fuelType) patch.fuelType = r.fuelType;
+    on(patch);
+    setState("ok");
+    setMsg(
+      `Imported${patch.vehicleName ? " " + patch.vehicleName : ""}. Review the fields below and adjust anything that didn't come through.`
+    );
+  }
 
   async function run() {
     if (!url) return;
     setState("loading");
     setMsg("");
     try {
-      const res = await fetch("/api/sgcarmart/import", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const data = await res.json();
-      if (data.ok && data.result) {
-        const r = data.result;
-        const patch: Patch = { vehicleId: undefined };
-        if (r.make && r.model) {
-          patch.vehicleName = [r.make, r.model, r.variant].filter(Boolean).join(" ");
-        }
-        if (r.price) patch.purchasePrice = r.price;
-        if (r.engineCc) patch.engineCc = r.engineCc;
-        if (r.fuelType) patch.fuelType = r.fuelType;
-        on(patch);
-        setState("ok");
-        setMsg(`Imported ${patch.vehicleName ?? "listing"}.`);
-      } else {
+      const data = await post({ url });
+      if (data.ok && data.result) applyResult(data);
+      else {
         setState("fail");
         setMsg(data.error || "Could not import this listing.");
+        if (data.needsHtml) setShowHtml(true);
+      }
+    } catch (e: any) {
+      setState("fail");
+      setMsg(e?.message || "Network error.");
+      setShowHtml(true);
+    }
+  }
+
+  async function runHtml() {
+    if (html.length < 500) {
+      setMsg("Paste the full page source — looks too short.");
+      setState("fail");
+      return;
+    }
+    setState("loading");
+    setMsg("");
+    try {
+      const data = await post({ html, url });
+      if (data.ok && data.result) applyResult(data);
+      else {
+        setState("fail");
+        setMsg(data.error || "Couldn't read enough from the HTML. Fill in manually below.");
       }
     } catch (e: any) {
       setState("fail");
@@ -243,14 +277,12 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
 
   return (
     <section className="card p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold">Paste a SGCarMart listing link</h2>
-          <p className="mt-1 text-xs text-ink-600">
-            We'll try to read the make, model, price, engine and fuel type from the public listing.
-            If fields are missing, finish them in the form below.
-          </p>
-        </div>
+      <div>
+        <h2 className="text-base font-semibold">Paste a SGCarMart listing link</h2>
+        <p className="mt-1 text-xs text-ink-600">
+          We'll read make, model, price, engine and fuel type from the listing. If SGCarMart blocks
+          the direct fetch, use the HTML paste option below.
+        </p>
       </div>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <input
@@ -271,14 +303,50 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
       </div>
       {msg && (
         <p
-          className={`mt-3 text-xs ${
-            state === "ok" ? "text-emerald-700" : "text-red-700"
-          }`}
+          className={`mt-3 text-xs ${state === "ok" ? "text-emerald-700" : "text-red-700"}`}
           role="status"
         >
           {msg}
         </p>
       )}
+
+      <div className="mt-4 border-t border-ink-100 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowHtml((v) => !v)}
+          className="text-xs font-medium text-brand-600"
+          aria-expanded={showHtml}
+        >
+          {showHtml ? "– Hide" : "+ Blocked? Paste the page HTML instead"}
+        </button>
+        {showHtml && (
+          <div className="mt-3 space-y-3">
+            <ol className="list-decimal space-y-1 pl-5 text-xs text-ink-600">
+              <li>Open the listing in your browser.</li>
+              <li>Press <kbd className="rounded bg-ink-100 px-1">Ctrl</kbd>+<kbd className="rounded bg-ink-100 px-1">U</kbd> to view source.</li>
+              <li><kbd className="rounded bg-ink-100 px-1">Ctrl</kbd>+<kbd className="rounded bg-ink-100 px-1">A</kbd> → <kbd className="rounded bg-ink-100 px-1">Ctrl</kbd>+<kbd className="rounded bg-ink-100 px-1">C</kbd>.</li>
+              <li>Paste it below and click Parse.</li>
+            </ol>
+            <textarea
+              className="input min-h-[160px] font-mono text-[11px]"
+              placeholder="<!DOCTYPE html> …"
+              value={html}
+              onChange={(e) => setHtml(e.target.value)}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-ink-400">{html.length.toLocaleString()} chars</span>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={runHtml}
+                disabled={state === "loading" || html.length < 500}
+              >
+                {state === "loading" ? "Parsing…" : "Parse HTML"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
