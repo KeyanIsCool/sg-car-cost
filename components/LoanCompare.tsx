@@ -1,6 +1,7 @@
 "use client";
-import { LOAN_RATES } from "@/lib/data/loans";
+import { LOAN_RATES as FALLBACK } from "@/lib/data/loans";
 import { calcLoan } from "@/lib/calculations/loan";
+const LOAN_RATES = FALLBACK;
 import { sgd } from "@/lib/format";
 
 export function LoanCompare({
