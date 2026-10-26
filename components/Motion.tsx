@@ -6,13 +6,22 @@ import { useEffect, useRef, useState } from "react";
  * CSS-driven reveal — content is visible from SSR; a brief fade-up kicks in
  * on mount so no-JS fallback and first paint both look right.
  */
-export function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+export function Reveal({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   return (
     <div
+      className={className}
       style={{
-        opacity: mounted ? 1 : 1,
+        opacity: 1,
         transform: mounted ? "translateY(0)" : "translateY(10px)",
         transition: `opacity 500ms ease ${delay}s, transform 500ms cubic-bezier(.21,.47,.32,.98) ${delay}s`,
       }}

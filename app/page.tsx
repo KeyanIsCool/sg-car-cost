@@ -18,8 +18,8 @@ export default function Home() {
     <div className="space-y-24">
       {/* HERO */}
       <section className="hero-grid relative overflow-hidden rounded-[2rem] bg-white px-6 pb-14 pt-10 sm:px-10 sm:pb-20 sm:pt-14">
-        <div className="relative z-10 grid items-end gap-10 lg:grid-cols-5">
-          <div className="lg:col-span-3">
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr,22rem]">
+          <div>
             <Reveal>
               <span className="chip chip-accent">🇸🇬 For Singapore drivers</span>
             </Reveal>
@@ -76,30 +76,26 @@ export default function Home() {
           </div>
 
           <Reveal delay={0.2}>
-            <div className="lg:col-span-2">
-              <div className="relative overflow-hidden rounded-3xl bg-ink-900 p-7 text-white shadow-2xl">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
-                    All-in monthly
-                  </span>
-                  <CarArt tint="#ff5e3a" className="h-8 w-16 shrink-0" />
-                </div>
-                <div className="num-xl mt-6 text-6xl font-bold leading-none sm:text-7xl">
-                  <CountUp value={2184} prefix="$" />
-                </div>
-                <div className="mt-3 text-base text-white/70">per month, all-in</div>
-                <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/10 pt-5">
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs">
-                    Instalment $1,320
-                  </span>
-                  <span className="rounded-full bg-pop-orange px-3 py-1 text-xs font-semibold">
-                    +$864 hidden cost
-                  </span>
-                </div>
-                <p className="mt-4 text-xs text-white/50">
-                  Indicative BMW 320i scenario — your result will differ.
-                </p>
+            <div className="relative overflow-hidden rounded-3xl bg-ink-900 p-7 text-white shadow-2xl">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                  All-in monthly
+                </span>
+                <CarArt tint="#ff5e3a" className="h-8 w-16 shrink-0" />
               </div>
+              <div className="num-xl mt-6 text-5xl font-bold leading-none sm:text-6xl">
+                <CountUp value={2184} prefix="$" />
+              </div>
+              <div className="mt-3 text-base text-white/70">per month, all-in</div>
+              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/10 pt-5">
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs">Instalment $1,320</span>
+                <span className="rounded-full bg-pop-orange px-3 py-1 text-xs font-semibold">
+                  +$864 hidden
+                </span>
+              </div>
+              <p className="mt-4 text-xs text-white/50">
+                Indicative BMW 320i scenario — your result will differ.
+              </p>
             </div>
           </Reveal>
         </div>
