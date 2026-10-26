@@ -1,4 +1,5 @@
 import { PETROL_BY_BRAND, PRICES_META } from "@/lib/data/fuelPrices";
+import Link from "next/link";
 
 export const metadata = {
   title: "Petrol prices in Singapore — Shell, Esso, Caltex, SPC, Sinopec",
@@ -25,6 +26,7 @@ export default function PetrolPage() {
               <th className="px-5 py-3 text-right">95</th>
               <th className="px-5 py-3 text-right">98</th>
               <th className="px-5 py-3 text-right">Diesel</th>
+              <th className="px-5 py-3 text-right">Reference</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100">
@@ -40,11 +42,24 @@ export default function PetrolPage() {
                 <td className="px-5 py-4 text-right num-xl font-semibold">${p["95"].toFixed(2)}</td>
                 <td className="px-5 py-4 text-right num-xl font-semibold">${p["98"].toFixed(2)}</td>
                 <td className="px-5 py-4 text-right num-xl font-semibold">${p.diesel.toFixed(2)}</td>
+                <td className="px-5 py-4 text-right">
+                  <Link
+                    href={p.reference_url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-xs font-medium text-brand-600 hover:underline"
+                  >
+                    Verify ↗
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </section>
+      <div className="rounded-2xl bg-ink-50 p-5 text-sm text-ink-600">
+        <b>Why not live?</b> Singapore pump prices aren't published via a public API. Each brand updates their own site/app and third-party aggregators lag by hours. We ship curated, honest indicative values with per-brand reference links so you can verify current in one click.
+      </div>
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl bg-pop-orange/10 p-5">

@@ -46,7 +46,37 @@ export default function EvPage() {
                 Off-peak: ${n.offpeak.toFixed(2)}/kWh
               </div>
             )}
-            <p className="mt-4 text-xs text-ink-600">{n.note}</p>
+            <p className="mt-4 text-sm text-ink-600">{n.note}</p>
+            {n.packages && n.packages.length > 0 && (
+              <div className="mt-4 space-y-2 border-t border-ink-100 pt-4">
+                <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+                  Subscription packages
+                </div>
+                {n.packages.map((p) => (
+                  <div
+                    key={p.name}
+                    className="flex items-center justify-between rounded-xl bg-ink-50 px-3 py-2 text-xs"
+                  >
+                    <div>
+                      <div className="font-medium text-ink-900">{p.name}</div>
+                      <div className="text-ink-500">{p.note}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="num-xl font-semibold">${p.perMonth}</div>
+                      <div className="text-[10px] text-ink-400">/ mo</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <a
+              href={n.reference_url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="mt-4 inline-block text-xs font-medium text-brand-600 hover:underline"
+            >
+              Verify current rates ↗
+            </a>
           </div>
         ))}
       </section>
