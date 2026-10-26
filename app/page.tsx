@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { AdSlot } from "@/components/AdSlot";
-import { listVehicles } from "@/lib/db";
-import { sgd } from "@/lib/format";
 import { Reveal, CountUp } from "@/components/Motion";
-import { CarArt, tintFor } from "@/components/CarArt";
+import { CarArt } from "@/components/CarArt";
 
 export const revalidate = 300;
 
@@ -15,10 +13,7 @@ const COST_CARDS = [
   { label: "Depreciation", v: 650, color: "bg-pop-plum/15 text-pop-plum" },
 ];
 
-export default async function Home() {
-  const vehicles = await listVehicles();
-  const featured = vehicles.slice(0, 8);
-
+export default function Home() {
   return (
     <div className="space-y-24">
       {/* HERO */}
@@ -82,27 +77,28 @@ export default async function Home() {
 
           <Reveal delay={0.2}>
             <div className="lg:col-span-2">
-              <div className="relative rounded-3xl bg-ink-900 p-7 text-white shadow-2xl">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-white/50">
+              <div className="relative overflow-hidden rounded-3xl bg-ink-900 p-7 text-white shadow-2xl">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
                     All-in monthly
                   </span>
-                  <span className="rounded-full bg-pop-orange/90 px-2.5 py-1 text-[11px] font-semibold">
-                    +$864 hidden
-                  </span>
+                  <CarArt tint="#ff5e3a" className="h-8 w-16 shrink-0" />
                 </div>
-                <div className="mt-4 text-xs text-white/60">Your instalment is $1,320. The real number is:</div>
-                <div className="num-xl mt-2 text-6xl font-bold leading-none sm:text-7xl">
+                <div className="num-xl mt-6 text-6xl font-bold leading-none sm:text-7xl">
                   <CountUp value={2184} prefix="$" />
                 </div>
-                <div className="mt-2 text-sm text-white/70">per month, all-in</div>
-                <div className="mt-6 h-px bg-white/10" />
-                <div className="mt-5 flex items-center gap-3">
-                  <CarArt tint="#ff5e3a" className="h-10 w-20 shrink-0" />
-                  <div className="text-xs text-white/70">
-                    Based on an indicative BMW 320i scenario. Your result will differ.
-                  </div>
+                <div className="mt-3 text-base text-white/70">per month, all-in</div>
+                <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/10 pt-5">
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs">
+                    Instalment $1,320
+                  </span>
+                  <span className="rounded-full bg-pop-orange px-3 py-1 text-xs font-semibold">
+                    +$864 hidden cost
+                  </span>
                 </div>
+                <p className="mt-4 text-xs text-white/50">
+                  Indicative BMW 320i scenario — your result will differ.
+                </p>
               </div>
             </div>
           </Reveal>
@@ -125,68 +121,6 @@ export default async function Home() {
                   <span className="text-xs font-normal opacity-70"> /mo</span>
                 </div>
               </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* FEATURED CARS */}
-      <section>
-        <div className="flex items-end justify-between">
-          <Reveal>
-            <h2 className="display text-3xl font-bold sm:text-4xl">Cars people are costing out</h2>
-            <p className="mt-2 text-base text-ink-600">
-              {vehicles.length} models in Neon · prices indicative, personalise in the calculator.
-            </p>
-          </Reveal>
-          <Link href="/cars" className="text-sm font-medium text-brand-600 hover:underline">
-            See all {vehicles.length} →
-          </Link>
-        </div>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((v, i) => (
-            <Reveal key={v.id} delay={i * 0.04}>
-              <Link
-                href={`/cars/${v.slug}`}
-                className="group block overflow-hidden rounded-3xl bg-white ring-1 ring-ink-100 transition hover:-translate-y-1 hover:shadow-xl"
-              >
-                <div
-                  className="relative aspect-[16/10] overflow-hidden"
-                  style={{
-                    background: `linear-gradient(135deg, ${tintFor(v.id)}22 0%, ${tintFor(v.id)}08 100%)`,
-                  }}
-                >
-                  {(v as any).hero_image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={(v as any).hero_image}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <CarArt tint={tintFor(v.id)} className="h-28 w-56 transition group-hover:scale-110" />
-                    </div>
-                  )}
-                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium uppercase tracking-wider text-ink-700 backdrop-blur">
-                    {v.fuel_type}
-                  </div>
-                </div>
-                <div className="p-5">
-                  <div className="text-[11px] uppercase tracking-wider text-ink-400">{v.make}</div>
-                  <div className="mt-1 text-base font-semibold leading-tight">
-                    {v.model}
-                    <span className="font-normal text-ink-600"> {v.variant}</span>
-                  </div>
-                  <div className="mt-3 flex items-end justify-between">
-                    <div className="num-xl text-xl font-bold">{sgd(Number(v.purchase_price))}</div>
-                    <span className="text-xs text-brand-600 opacity-0 transition group-hover:opacity-100">
-                      View cost →
-                    </span>
-                  </div>
-                </div>
-              </Link>
             </Reveal>
           ))}
         </div>

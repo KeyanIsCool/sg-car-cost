@@ -24,7 +24,7 @@ export interface ScrapedCar {
   regDate?: string;
   manufactured?: string | number;
   engineCc?: number;
-  fuelType?: "petrol" | "diesel" | "hybrid" | "ev";
+  fuelType?: "petrol" | "diesel" | "hybrid" | "phev" | "ev";
   description?: string;
   images: string[];
   sourceUrl: string;
@@ -96,11 +96,22 @@ function extractDescription(html: string): string | undefined {
 function parseFuel(s: string | undefined): ScrapedCar["fuelType"] {
   if (!s) return;
   const t = s.toLowerCase();
-  if (t.includes("electric") || t === "ev") return "ev";
-  if (t.includes("hybrid")) return "hybrid";
+  // Order matters: a "Petrol-Electric (Hybrid)" string must classify as
+  // hybrid, not as EV. Plug-in beats mild-hybrid beats pure electric.
+  if (t.includes("plug") || t.includes("phev")) return "phev";
+  if (t.includes("hybrid") || t.includes("mhev") || t.includes("petrol-electric")) {
+    return "hybrid";
+  }
   if (t.includes("diesel")) return "diesel";
   if (t.includes("petrol")) return "petrol";
+  if (t.includes("electric") || /\bev\b|\bbev\b/.test(t)) return "ev";
   return;
+}
+
+/** Strip the double-$ artifact that SGCarMart's RSC payload introduces. */
+function stripDoubleDollar(s: string | undefined): string | undefined {
+  if (!s) return s;
+  return s.replace(/^\$+/, "$").replace(/\$\$/g, "$");
 }
 
 function splitMakeModel(carModel: string): { make?: string; model?: string; variant?: string } {
@@ -198,6 +209,9 @@ export async function scrapeSgcarmart(url: string): Promise<ScrapedCar> {
     pickJsonString(html, "engine_cap");
   const engineCc = engineLabel ? priceToNumber(engineLabel) : undefined;
 
+  // Model text wins when it names a hybrid variant (Mild Hybrid, Plug-in).
+  const fuelFromModel = parseFuel(carModel);
+
   const { make, model, variant } = splitMakeModel(carModel);
 
   const coe = coeLeft ? parseCoeLeft(coeLeft) : null;
@@ -210,8 +224,8 @@ export async function scrapeSgcarmart(url: string): Promise<ScrapedCar> {
     variant,
     price,
     priceRaw,
-    installment,
-    depreciation,
+    installment: stripDoubleDollar(installment),
+    depreciation: stripDoubleDollar(depreciation),
     coeLeft,
     coeEnd: coe ? formatCoeMMYYYY(coe.endDate) : undefined,
     monthsLeft: coe?.months,
@@ -220,7 +234,7 @@ export async function scrapeSgcarmart(url: string): Promise<ScrapedCar> {
     regDate,
     manufactured,
     engineCc,
-    fuelType: parseFuel(fuelLabel),
+    fuelType: fuelFromModel || parseFuel(fuelLabel),
     description,
     images,
     sourceUrl: clean,

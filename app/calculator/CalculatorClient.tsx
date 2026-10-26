@@ -203,7 +203,7 @@ function Num({
   );
 }
 
-function SgcmImport({ on }: { on: (p: Patch) => void }) {
+function SgcmImport({ on, kind }: { on: (p: Patch) => void; kind: "car" | "bike" }) {
   const [url, setUrl] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "ok" | "fail">("idle");
   const [msg, setMsg] = useState("");
@@ -248,12 +248,12 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
     <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pop-sky/40 via-white to-pop-mint/30 p-5 ring-1 ring-ink-100 sm:p-7">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-xl text-white">
-          🚗
+          {kind === "bike" ? "🏍" : "🚗"}
         </div>
         <div>
           <h2 className="text-lg font-semibold sm:text-xl">Import from SGCarMart</h2>
           <p className="mt-1 text-sm text-ink-600">
-            Paste a listing URL — we read make, model, price, engine, fuel, mileage, COE and more.
+            Paste a {kind === "bike" ? "bike" : "car"} listing URL — we read make, model, price, engine, fuel, mileage, COE and more.
           </p>
         </div>
       </div>
@@ -261,7 +261,11 @@ function SgcmImport({ on }: { on: (p: Patch) => void }) {
         <input
           type="url"
           className="input flex-1 bg-white"
-          placeholder="https://www.sgcarmart.com/listing/…"
+          placeholder={
+            kind === "bike"
+              ? "https://www.sgcarmart.com/bikes/…"
+              : "https://www.sgcarmart.com/listing/…"
+          }
           value={url}
           onChange={(e) => setUrl(e.target.value)}
         />
@@ -379,8 +383,8 @@ function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
           />
         </div>
       </Card>
-      {s.kind === "car" && <SgcmImport on={on} />}
-      <Card title="Vehicle details" hint="Pre-filled from import or catalogue.">
+      <SgcmImport on={on} kind={s.kind} />
+      <Card title="Vehicle details" hint="Fills in from the import above, or pick from the catalogue.">
         {s.vehicleImage && (
           <div className="sm:col-span-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -393,12 +397,17 @@ function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
           </div>
         )}
         <div className="sm:col-span-2">
-          <Field label="Vehicle">
+          <Field label="Or pick from catalogue (optional)">
             <select
               className="input"
               value={s.vehicleId ?? ""}
               onChange={(e) => {
-                const v = VEHICLES.find((x) => x.id === e.target.value) as any;
+                const id = e.target.value;
+                if (!id) {
+                  on({ vehicleId: undefined, vehicleName: "", purchasePrice: 0, engineCc: 0 });
+                  return;
+                }
+                const v = VEHICLES.find((x) => x.id === id) as any;
                 if (!v) return;
                 on({
                   vehicleId: v.id,
@@ -413,9 +422,10 @@ function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
                 });
               }}
             >
-              {VEHICLES.map((v) => (
+              <option value="">— None (enter manually or import) —</option>
+              {VEHICLES.map((v: any) => (
                 <option key={v.id} value={v.id}>
-                  {v.make} {v.model} {v.variant} — {sgd(v.purchase_price)}
+                  {v.make} {v.model} {v.variant} — {sgd(Number(v.purchase_price))}
                 </option>
               ))}
             </select>
@@ -439,27 +449,43 @@ function StepCar({ s, on }: { s: CalcState; on: (p: Patch) => void }) {
                     { value: "petrol", label: "Petrol" },
                     { value: "diesel", label: "Diesel" },
                     { value: "hybrid", label: "Hybrid" },
+                    { value: "phev", label: "Plug-in Hybrid" },
                     { value: "ev", label: "EV" },
                   ]
             }
           />
         </Field>
-        {s.fuelType !== "ev" ? (
-          <>
-            <Field label="Engine capacity">
-              <Num suffix="cc" value={s.engineCc} onChange={(n) => on({ engineCc: n })} />
-            </Field>
-            <Field label="Fuel economy">
-              <Num suffix="L/100km" value={s.litresPer100km} onChange={(n) => on({ litresPer100km: n })} />
-            </Field>
-          </>
-        ) : (
+        {s.fuelType === "ev" ? (
           <>
             <Field label="Motor power">
               <Num suffix="kW" value={s.motorKw} onChange={(n) => on({ motorKw: n })} />
             </Field>
             <Field label="Energy use">
               <Num suffix="kWh/100km" value={s.kwhPer100km} onChange={(n) => on({ kwhPer100km: n })} />
+            </Field>
+          </>
+        ) : s.fuelType === "phev" ? (
+          <>
+            <Field label="Engine capacity">
+              <Num suffix="cc" value={s.engineCc} onChange={(n) => on({ engineCc: n })} />
+            </Field>
+            <Field label="Combined fuel economy">
+              <Num suffix="L/100km" value={s.litresPer100km} onChange={(n) => on({ litresPer100km: n })} />
+            </Field>
+            <Field label="Motor power">
+              <Num suffix="kW" value={s.motorKw} onChange={(n) => on({ motorKw: n })} />
+            </Field>
+            <Field label="Energy use (EV mode)">
+              <Num suffix="kWh/100km" value={s.kwhPer100km} onChange={(n) => on({ kwhPer100km: n })} />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label="Engine capacity">
+              <Num suffix="cc" value={s.engineCc} onChange={(n) => on({ engineCc: n })} />
+            </Field>
+            <Field label="Fuel economy">
+              <Num suffix="L/100km" value={s.litresPer100km} onChange={(n) => on({ litresPer100km: n })} />
             </Field>
           </>
         )}

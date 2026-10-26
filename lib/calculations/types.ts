@@ -1,4 +1,4 @@
-export type FuelType = "petrol" | "diesel" | "hybrid" | "ev";
+export type FuelType = "petrol" | "diesel" | "hybrid" | "phev" | "ev";
 export type PetrolGrade = "92" | "95" | "98" | "diesel";
 export type COECategory = "A" | "B" | "C" | "D" | "E";
 

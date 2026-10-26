@@ -56,6 +56,21 @@ export function compute(s: CalcState): ComputeResult {
       publicRate: s.publicKwhRate,
       homePct: s.homeChargePct,
     }).monthlyCost;
+  } else if (s.fuelType === "phev") {
+    // Blend: assume ~55% kms on EV mode, 45% on petrol combined cycle.
+    const ev = calcEV({
+      annualKm: s.annualKm * 0.55,
+      kwhPer100km: s.kwhPer100km,
+      homeRate: s.homeKwhRate,
+      publicRate: s.publicKwhRate,
+      homePct: s.homeChargePct,
+    });
+    const petrol = calcFuel({
+      annualKm: s.annualKm * 0.45,
+      litresPer100km: s.litresPer100km,
+      pricePerLitre: s.pricePerLitre,
+    });
+    energyMonthly = ev.monthlyCost + petrol.monthlyCost;
   } else {
     energyMonthly = calcFuel({
       annualKm: s.annualKm,
@@ -86,8 +101,9 @@ export function compute(s: CalcState): ComputeResult {
   let roadTaxAnnual = 0;
   if (s.kind === "bike") roadTaxAnnual = roadTaxBike(s.engineCc);
   else if (s.fuelType === "ev") roadTaxAnnual = roadTaxEV(s.motorKw);
-  else if (s.fuelType === "hybrid") roadTaxAnnual = roadTaxHybrid(s.engineCc);
-  else roadTaxAnnual = roadTaxICE(s.engineCc);
+  else if (s.fuelType === "hybrid" || s.fuelType === "phev") {
+    roadTaxAnnual = roadTaxHybrid(s.engineCc);
+  } else roadTaxAnnual = roadTaxICE(s.engineCc);
 
   const maintMonthly =
     s.maintenanceCustom > 0 ? s.maintenanceCustom : MAINTENANCE_PRESETS[s.maintenanceTier];

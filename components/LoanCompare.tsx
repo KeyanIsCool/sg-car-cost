@@ -50,6 +50,7 @@ function Table({ title, rows }: { title: string; rows: any[] }) {
             <th className="px-5 py-2 text-right">Flat</th>
             <th className="px-5 py-2 text-right">Monthly</th>
             <th className="px-5 py-2 text-right">Total interest</th>
+            <th className="px-5 py-2 text-right">Reference</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-ink-100">
@@ -60,10 +61,21 @@ function Table({ title, rows }: { title: string; rows: any[] }) {
                   <span>{r.lender}</span>
                   {i === 0 && <span className="pill bg-pop-yellow/40 text-amber-800">Best</span>}
                 </div>
+                <div className="text-[11px] text-ink-400">{r.source} · {r.effective_date}</div>
               </td>
               <td className="px-5 py-3 text-right num-xl font-medium">{(r.flat_rate * 100).toFixed(2)}%</td>
               <td className="px-5 py-3 text-right num-xl font-semibold">{sgd(r.monthlyInstalment)}</td>
               <td className="px-5 py-3 text-right num-xl text-ink-600">{sgd(r.totalInterest)}</td>
+              <td className="px-5 py-3 text-right">
+                <a
+                  href={r.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="text-xs font-medium text-brand-600 hover:underline"
+                >
+                  View ↗
+                </a>
+              </td>
             </tr>
           ))}
         </tbody>
